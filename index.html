@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Transcription & Summarization</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #dff0d8;
+            border: 1px solid #d6e9c6;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            border: 1px solid #ebccd1;
+            color: #a94442;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .transcript, .summary {
+            margin-top: 15px;
+        }
+        .transcript h3, .summary h3 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .transcript-content, .summary-content {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Audio Transcription & Summarization</h1>
+        <div class="input-group">
+            <label for="audioUrl">Audio File URL:</label>
+            <input type="url" id="audioUrl" placeholder="https://example.com/audio.mp3" />
+        </div>
+        <button id="processBtn">Process Audio</button>
+        
+        <div class="loader" id="loader"></div>
+        
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('processBtn').addEventListener('click', processAudio);
+        
+        async function processAudio() {
+            const audioUrl = document.getElementById('audioUrl').value;
+            const resultDiv = document.getElementById('result');
+            const loader = document.getElementById('loader');
+            const processBtn = document.getElementById('processBtn');
+            
+            if (!audioUrl) {
+                showError('Please enter an audio file URL');
+                return;
+            }
+            
+            // Show loader and disable button
+            loader.style.display = 'block';
+            processBtn.disabled = true;
+            resultDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('http://localhost:8001/process_audio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ audio_url: audioUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showSuccess(data);
+                } else {
+                    showError(data.detail || 'An error occurred');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                // Hide loader and enable button
+                loader.style.display = 'none';
+                processBtn.disabled = false;
+            }
+        }
+        
+        function showSuccess(data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `
+                <h3>Processing Complete!</h3>
+                <div class="transcript">
+                    <h3>Transcript (Language: ${data.language})</h3>
+                    <div class="transcript-content">${data.transcript}</div>
+                </div>
+                <div class="summary">
+                    <h3>Summary</h3>
+                    <div class="summary-content">${data.summary}</div>
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+        }
+        
+        function showError(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result error';
+            resultDiv.innerHTML = `<h3>Error</h3><p>${message}</p>`;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

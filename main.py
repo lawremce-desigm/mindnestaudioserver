@@ -24,7 +24,7 @@ class AudioRequest(BaseModel):
 def summarize_with_openrouter(text: str) -> str:
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
-        return "Error: OPENROUTER_API_KEY not set."
+        return "Error: OPENROUTER_API_KEY not set. Please configure the environment variable."
 
     headers = {
         "Authorization": f"Bearer {api_key}",
